@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <title>Googlemaps Heatmap Layer</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Script import -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA2Y--OA38MZt6VLTaE9KB0BGEphsT4-VM" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    
+  
+    
+</head>
+<body>
+	<!-- Init icone menu gauche  -->
+    <div id="paramButton">
+        <button onclick="resetMap()">Reset carte</button>
+        <FORM>
+            <SELECT id="typeDeFichier">
+                <OPTION>wc
+                <OPTION>dem3
+            </SELECT>
+        </FORM>
+        <FORM>
+            <SELECT id="typeDeZoom">
+                <OPTION>pays
+                <OPTION>region
+                <OPTION>ville
+                        <OPTION>all
+                                
+            </SELECT>
+        </FORM>
+        <button onclick="loadData()">Valider </button>
+
+        <div>
+            <label for="uname">Taille cercle : </label>
+            <p id="valeurSlider">20</p>
+            <div class="slidecontainer">
+                <input type="range" min="1" max="100" value="20" class="slider" id="sliderCercleValeur">
+            </div>          
+        </div>
+        <div>
+                <label for="uname">Nombre couleur : </label>
+                <p id="valeurSliderCouleur">5</p>
+                <div class="slidecontainer">
+                    <input type="range" min="1" max="5" value="5" class="slider" id="sliderCouleurValeur">
+                </div>          
+            </div>
+    </div>
+	
+	<!-- Init map google-->
+    <div id="map"></div>
+    
+
+	<script>
+
+		//Def variable
+		var donneeAffichee=[];
+		var tailleCercle = document.getElementById("sliderCercleValeur");
+		var valSlid  = document.getElementById("valeurSlider");
+		valSlid.innerHTML = tailleCercle.value;
+		tailleCercle.oninput = function() {
+			valSlid.innerHTML = this.value;
+		}
+		var nbCouleur = document.getElementById("sliderCouleurValeur");
+		var valSlidCouleur  = document.getElementById("valeurSliderCouleur");
+		valSlidCouleur.innerHTML = nbCouleur.value;
+		nbCouleur.oninput = function() {
+			valSlidCouleur.innerHTML = this.value;
+		}
+
+
+
+		//Init map
+		var map = new google.maps.Map(document.getElementById('map'), {
+			  zoom: 2,
+			  center: {lat: 48.864716, lng: 2.349014},
+			  mapTypeId: 'terrain'
+			});
+	  
+		// charge le fichier json correspondant aux parametres du menu
+		function loadData()
+		{
+
+			var zoom = document.getElementById("typeDeZoom");
+			var zoomSelected = zoom.options[zoom.selectedIndex].value;
+
+			var fichier = document.getElementById("typeDeFichier");
+			var fichierSelected = fichier.options[fichier.selectedIndex].value;
+			var lien = "/" + fichierSelected + "/" + zoomSelected;
+
+			//appel http
+			$.ajax({
+				url: lien,
+				complete: function(data) {
+					var ob = JSON.parse(data.responseText);
+					   var max=0;
+					   var codeCouleur;
+
+					//get min max value
+					for(var i in ob.pays)
+					{
+						if(ob.pays[i].pop > max)
+						{
+							max = ob.pays[i].pop;
+						}
+					}
+					//Pour chaque element on creer le cercle
+					for(var i in ob.pays)
+					{
+						
+							 var cent={
+								"lat" :parseFloat(ob.pays[i].lat),
+								"lng": parseFloat(ob.pays[i].lon)
+							}
+
+							switch(nbCouleur.value)
+							{
+								case "1":
+								codeCouleur='#7CF790';
+								break;
+								case "2":
+									if(ob.pays[i].pop < (max/2))
+									{
+										codeCouleur='#7CF790';
+
+									}
+									else{
+										codeCouleur='#00FB2A';
+
+									}
+								break;
+								case "3":
+								if(ob.pays[i].pop < (max/3))
+									{
+										codeCouleur='#7CF790';
+
+									}
+									else if(ob.pays[i].pop < ((max/3)*2)){
+										codeCouleur='#00FB2A';
+
+									} codeCouleur='#FBC100';
+
+									
+								break;
+								case "4":
+								if(ob.pays[i].pop < (max/4))
+									{
+										codeCouleur='#7CF790';
+
+									}
+									else if(ob.pays[i].pop < ((max/4)*2)){
+										codeCouleur='#00FB2A';
+
+									} 
+									else if( ob.pays[i].pop < ((max/4)*3)    )
+									{
+										codeCouleur='#FBC100';
+									}
+									codeCouleur='#FB8484';
+
+								break;
+								case "5":
+								if(ob.pays[i].pop < (max/5))
+									{
+										codeCouleur='#7CF790';
+
+									}
+									else if(ob.pays[i].pop < ((max/5)*2)){
+										codeCouleur='#00FB2A';
+
+									} 
+									else if( ob.pays[i].pop < ((max/5)*3)    )
+									{
+										codeCouleur='#FBC100';
+									}
+									else if( ob.pays[i].pop < ((max/5)*4)    )
+										{
+											codeCouleur='#FB8484';
+
+										}
+										codeCouleur='#F70000';
+
+								break;
+
+								default:
+							}
+							var cityCircle = new google.maps.Circle(
+							{
+								strokeColor: codeCouleur,
+								strokeOpacity: 0.8,
+								strokeWeight: 2,
+								fillColor: codeCouleur,
+								fillOpacity: 0.35,
+								map: map,
+								center: cent,
+								radius: Math.sqrt(ob.pays[i].pop) * tailleCercle.value
+
+							});
+
+							donneeAffichee.push(cityCircle);
+							codeCouleur="";
+					}
+				}
+			});
+		}
+		
+		//Efface les markeur de la map
+		function resetMap()
+		{
+			for(i in donneeAffichee)
+			{
+				donneeAffichee[i].setMap(null);
+			}
+			donneeAffichee=[];
+		}
+	 
+
+
+	</script>
+</body>
+</html>

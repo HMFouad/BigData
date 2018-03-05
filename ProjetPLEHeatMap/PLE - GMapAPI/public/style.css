@@ -1,0 +1,30 @@
+
+#paramButton
+{
+    display: block;
+    float: left;
+    height: 50px;
+    width: 150;
+    margin-right: 5px;
+    background-image: url(./images/button_left.png);
+    text-align: center;
+    line-height: 50px;
+    text-decoration: none;    
+    margin:auto;
+    
+}
+
+#map {
+    height: 100%;
+  }
+  /* Optional: Makes the sample page fill the window. */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .slider
+  {
+    width: 80%;
+  }
